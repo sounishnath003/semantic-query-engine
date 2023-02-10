@@ -1,0 +1,2 @@
+from .config import DensePassageRetrivalConfiguration
+from .models import DensePassageRetrivalModel
