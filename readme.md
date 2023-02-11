@@ -33,5 +33,6 @@ Note: During training, we feed a question-context pair into our DPR model, and t
 
 
 ### Kudos to the links I followed
-- [Dense Passage Retrival Ranker Towards Data science Paper Explanation](https://towardsdatascience.com/how-to-create-an-answer-from-a-question-with-dpr-d76e29cc5d60)
 - [Understanding DPR Systems](https://towardsdatascience.com/understanding-dense-passage-retrieval-dpr-system-bce5aee4fd40)
+- [Dense Passage Retrival Research Paper](https://arxiv.org/pdf/2004.04906.pdf)
+- [Dense Passage Retrival Ranker Towards Data science Paper Explanation](https://towardsdatascience.com/how-to-create-an-answer-from-a-question-with-dpr-d76e29cc5d60)

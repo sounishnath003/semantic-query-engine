@@ -14,6 +14,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class PassageRetrivalEncoder(nn.Module):
+class PassageContextRetrivalEncoder(nn.Module):
     def __init__(self) -> None:
-        super(PassageRetrivalEncoder, self).__init__()
+        super(PassageContextRetrivalEncoder, self).__init__()
+
+    def forward(self, input: torch.Tensor):
+        return input

@@ -15,6 +15,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class QuestionReaderEncoder(nn.Module):
+class QueryContextReaderEncoder(nn.Module):
     def __init__(self) -> None:
-        super(QuestionReaderEncoder, self).__init__()
+        super(QueryContextReaderEncoder, self).__init__()
+
+    def forward(self, input: torch.Tensor):
+        return input

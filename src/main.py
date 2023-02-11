@@ -7,37 +7,63 @@ filename: main.py
 createdAt: 2023-02-11 01:22:29
 """
 
+import json
 import logging
+
+import numpy as np
 import pandas as pd
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-from densePassageRetrival import (
+from densePassageRetrivalModel import (
     DensePassageRetrivalConfiguration,
-    DensePassageRetrivalModel,
+    DensePassageRetrivalDeepNeuralNetM,
+    WorkPieceDomainTokenizer,
 )
+from src.config import Config
 
 
-def load_dataset():
-    train_data = [
-        {
-            "query": "Who is the protaganist of Dune?",
-            "context": 'Dune is set in the distant future amidst a feudal interstellar society in which various noble houses control planetary fiefs. It tells the story of young Paul Atreides, whose family accepts the stewardship of the planet Arrakis. While the planet is an inhospitable and sparsely populated desert wasteland, it is the only source of melange, or "spice", a drug that extends life and enhances mental abilities. Melange is also necessary for space navigation, which requires a kind of multidimensional awareness and foresight that only the drug provides. As melange can only be produced on Arrakis, control of the planet is a coveted and dangerous undertaking.',
-        },
-        {
-            "query": "Who is the author of Dune?",
-            "context": "Dune is a 1965 science fiction novel by American author Frank Herbert, originally published as two separate serials in Analog magazine.",
-        },
-    ]
-    return pd.DataFrame(train_data)
+def setups_reproducibility():
+    np.random.seed(0)
+    seed = torch.Generator().seed()
+    torch.manual_seed(seed)
+    logging.info(f"Seeding has been set for numpy and pytorch - {seed}")
+
+
+def load_dataset(training_path: str, validation_path: str):
+    training_data = json.load(open(training_path))
+    validation_data = json.load(open(validation_path))
+    return pd.DataFrame(training_data), pd.DataFrame(validation_data)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    setups_reproducibility()
 
-    dfx = load_dataset()
-    logging.info(dfx)
+    logging.info(f"Configuration={Config()}")
+    train_dfx, valid_dfx = load_dataset(
+        training_path=Config.TRAINING_SET_PATH,
+        validation_path=Config.VALIDATION_SET_PATH,
+    )
+    logging.info(dict(train_size=train_dfx.shape, valid_size=valid_dfx.shape))
 
     configuration = DensePassageRetrivalConfiguration()
     logging.info(configuration)
 
-    dpr_model = DensePassageRetrivalModel(config=configuration)
+    """
+    dpr_model = DensePassageRetrivalDeepNeuralNetM(config=configuration)
     logging.info(dpr_model)
+
+    query_tensor = torch.randn(size=(3, 3, 3))
+    context_tensor = torch.randn(size=(3, 3, 5))
+    logits = dpr_model(query_tensor, context_tensor)
+    logging.info(dict(logits=logits, size=logits.size()))
+    """
+
+    tokenizer = WorkPieceDomainTokenizer(
+        pretraining_folder=Config.PRETRAINING_TOKEN_FOLDER, pretrained=False
+    )
+    tokenizer.train(corpus=train_dfx["context"].values)
+    # outs = tokenizer(["dune is not a good person"])
+    # logging.info(outs)
