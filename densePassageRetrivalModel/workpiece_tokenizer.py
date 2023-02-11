@@ -10,6 +10,7 @@ createdAt: 2023-02-11 13:08:46
 import os
 
 from tokenizers import BertWordPieceTokenizer
+from transformers import BertTokenizer
 
 
 class WorkPieceDomainTokenizer:
@@ -32,24 +33,22 @@ class WorkPieceDomainTokenizer:
         wordpieces_prefix="##",
         special_tokens=["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"],
     ):
-        try:
-            if self.is_pretrained:
-                pass
-            else:
-                self.__train_tokenizer_step(
-                    files,
-                    vocab_size,
-                    min_frequency,
-                    limit_alphabet,
-                    wordpieces_prefix,
-                    special_tokens,
-                )
-        except Exception as e:
-            print(e)
+        if self.is_pretrained:
+            return self.__load_pretrained_tokenizer()
+        else:
+            __trained_tokenizer = self.__train_tokenizer_step(
+                files=files,
+                vocab_size=vocab_size,
+                min_frequency=min_frequency,
+                limit_alphabet=limit_alphabet,
+                wordpieces_prefix=wordpieces_prefix,
+                special_tokens=special_tokens,
+            )
+            return __trained_tokenizer
 
     def __train_tokenizer_step(
         self,
-        corpus,
+        files,
         vocab_size,
         min_frequency,
         limit_alphabet,
@@ -58,16 +57,19 @@ class WorkPieceDomainTokenizer:
     ):
         try:
             self.tokenizer.train(
-                corpus,
-                vocab_size,
-                min_frequency,
-                limit_alphabet,
-                wordpieces_prefix,
-                special_tokens,
+                files=files,
+                vocab_size=vocab_size,
+                min_frequency=min_frequency,
+                limit_alphabet=limit_alphabet,
+                wordpieces_prefix=wordpieces_prefix,
+                special_tokens=special_tokens,
             )
             os.mkdir(self.pretrained_folder)
-            self.tokenizer.save_model(
-                self.pretrained_folder, "pretraining-tokenizer-model"
-            )
+            self.tokenizer.save_model(self.pretrained_folder)
+            return self.__load_pretrained_tokenizer()
         except Exception as e:
-            return e
+            print(e)
+            return None
+
+    def __load_pretrained_tokenizer(self):
+        return BertTokenizer.from_pretrained(self.pretrained_folder)

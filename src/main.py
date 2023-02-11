@@ -9,6 +9,7 @@ createdAt: 2023-02-11 01:22:29
 
 import json
 import logging
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -22,6 +23,11 @@ from densePassageRetrivalModel import (
     WorkPieceDomainTokenizer,
 )
 from src.config import Config
+
+## GLOBAL PRESETS #########
+warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.DEBUG)
+## GLOBAL PRESETS #########
 
 
 def setups_reproducibility():
@@ -37,11 +43,26 @@ def load_dataset(training_path: str, validation_path: str):
     return pd.DataFrame(training_data), pd.DataFrame(validation_data)
 
 
+def initialize_tokenizer_loaders():
+    logging.basicConfig(level=logging.DEBUG)
+    try:
+        tokenizer = WorkPieceDomainTokenizer(
+            pretraining_folder=Config.PRETRAINING_TOKEN_FOLDER,
+            pretrained=Config.USE_PRETRAINED_TOKENIZER,
+        )
+        __trained_tokenizer = tokenizer.train(files=Config.CORPUS_FILES)
+        return __trained_tokenizer
+    except Exception as e:
+        logging.error(e)
+        return None
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     setups_reproducibility()
 
     logging.info(f"Configuration={Config()}")
+    logging.info(f"CORPUS_FILES={Config.CORPUS_FILES}")
     train_dfx, valid_dfx = load_dataset(
         training_path=Config.TRAINING_SET_PATH,
         validation_path=Config.VALIDATION_SET_PATH,
@@ -61,9 +82,6 @@ if __name__ == "__main__":
     logging.info(dict(logits=logits, size=logits.size()))
     """
 
-    tokenizer = WorkPieceDomainTokenizer(
-        pretraining_folder=Config.PRETRAINING_TOKEN_FOLDER, pretrained=False
-    )
-    tokenizer.train(files=['main.py'])
-    # outs = tokenizer(["dune is not a good person"])
-    # logging.info(outs)
+    tokenizer = initialize_tokenizer_loaders()
+    outs = tokenizer("dune is not a good person")
+    logging.info(outs)
