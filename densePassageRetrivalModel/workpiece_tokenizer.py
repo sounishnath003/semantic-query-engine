@@ -25,7 +25,7 @@ class WorkPieceDomainTokenizer:
 
     def train(
         self,
-        corpus: list,
+        files: list,
         vocab_size=10_000,
         min_frequency=3,
         limit_alphabet=1000,
@@ -37,7 +37,7 @@ class WorkPieceDomainTokenizer:
                 pass
             else:
                 self.__train_tokenizer_step(
-                    corpus,
+                    files,
                     vocab_size,
                     min_frequency,
                     limit_alphabet,

@@ -64,6 +64,6 @@ if __name__ == "__main__":
     tokenizer = WorkPieceDomainTokenizer(
         pretraining_folder=Config.PRETRAINING_TOKEN_FOLDER, pretrained=False
     )
-    tokenizer.train(corpus=train_dfx["context"].values)
+    tokenizer.train(files=['main.py'])
     # outs = tokenizer(["dune is not a good person"])
     # logging.info(outs)

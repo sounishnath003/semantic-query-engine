@@ -7,6 +7,7 @@ filename: config.py
 createdAt: 2023-02-11 11:55:41
 """
 
+from glob import glob
 from dataclasses import dataclass
 
 
@@ -15,3 +16,4 @@ class Config:
     TRAINING_SET_PATH: str = "./data/trainset.json"
     VALIDATION_SET_PATH: str = "./data/validset.json"
     PRETRAINING_TOKEN_FOLDER: str = "./pretraining_tokenizer_out"
+    CORPUS_FILES=list(map(str,glob('./corpus/*.txt')))
