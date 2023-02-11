@@ -24,10 +24,18 @@ class DensePassageRetrivalDeepNeuralNetM(nn.Module):
     def __init__(self, config: DensePassageRetrivalConfiguration) -> None:
         super(DensePassageRetrivalDeepNeuralNetM, self).__init__()
         self.config = config
-        self.passage_retrival_ranker = PassageContextRetrivalEncoder()
-        self.query_reader_ranker = QueryContextReaderEncoder()
+        self.passage_retrival_ranker = PassageContextRetrivalEncoder(
+            model_name="bert-base-uncased",
+            num_train_steps=config.num_train_steps,
+            learning_rate=config.learning_rate,
+        )
+        self.query_reader_ranker = QueryContextReaderEncoder(
+            model_name="bert-base-uncased",
+            num_train_steps=config.num_train_steps,
+            learning_rate=config.learning_rate,
+        )
 
-    def forward(self, query: torch.Tensor, context: torch.Tensor):
+    def forward(self, query: torch.Tensor, context: torch.Tensor, is_training=True):
         query_reader_encodings = self.query_reader_ranker(query)
         passage_retrival_encodings = self.passage_retrival_ranker(context)
         similarity = self.scaled_similary_computation(

@@ -17,4 +17,5 @@ class DensePassageRetrivalConfiguration:
     num_train_epochs: int = 10
     num_train_batch_size: int = 16
     num_valid_batch_size: int = 16
-    learning_rate: float = 3e-3
+    learning_rate: float = 1e-5
+    num_train_steps: int = 100
