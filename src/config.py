@@ -18,3 +18,5 @@ class Config:
     PRETRAINING_TOKEN_FOLDER: str = "./pretraining_tokenizer_out"
     CORPUS_FILES = glob("./corpus/*.txt")
     USE_PRETRAINED_TOKENIZER: bool = True
+    MAX_SEQUENCE_LENGTH: int = 128
+    STRIDE_LENGTH: int = 32

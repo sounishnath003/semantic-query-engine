@@ -17,14 +17,17 @@ import tez
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from densePassageRetrivalModel import (
     DensePassageRetrivalConfiguration,
     DensePassageRetrivalDeepNeuralNetM,
     DensePassageRetrivalDocument,
+    OpenDomainQuestionAnsweringModel,
     WordPieceDomainTokenizer,
 )
 from src.config import Config
+from src.dataset import Dataset
 
 ## GLOBAL PRESETS #########
 warnings.filterwarnings("ignore")
@@ -77,14 +80,42 @@ if __name__ == "__main__":
     logging.info(configuration)
 
     tokenizer = initialize_tokenizer_loaders()
-    original_sent = "Ratan tata is a big shot of India."
-    outs = tokenizer(original_sent)
-    retus = tokenizer.decode(outs["input_ids"])
-    logging.info(dict(original=original_sent, encode=outs, back_2_original=retus))
-
-    dpr_model = DensePassageRetrivalDeepNeuralNetM(config=configuration)
 
     """
+    original_sent = "Ratan tata is the big shot"
+    original_sent2 = "Ratan tata owns Tashinq"
+    outs = tokenizer(
+        original_sent,
+        original_sent2,
+        truncation="only_second",
+        max_length=Config.MAX_SEQUENCE_LENGTH,
+        padding="max_length",
+        stride=Config.STRIDE_LENGTH,
+    )
+    retus = tokenizer.decode(outs["input_ids"])
+    logging.info(
+        dict(
+            original=f"{original_sent} {original_sent2}",
+            encode=outs,
+            back_2_original=retus,
+        )
+    )
+    """
+
+    train_dataset = Dataset(tokenizer=tokenizer, documents=train_data)
+    train_dataloader = DataLoader(dataset=train_dataset, batch_size=2, shuffle=True)
+
+    valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data)
+    valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=2, shuffle=True)
+    # logging.info(train_dataset[1])
+
+    qa_model = OpenDomainQuestionAnsweringModel(configuration=configuration)
+    ddict = next(iter(train_dataloader))
+    outs = qa_model(**ddict)
+    logging.info(ddict)
+
+    """
+    # dpr_model = DensePassageRetrivalDeepNeuralNetM(config=configuration)
     query_tensor = torch.randn(size=(3, 3, 3))
     context_tensor = torch.randn(size=(3, 3, 5))
     logits = dpr_model(query_tensor, context_tensor)

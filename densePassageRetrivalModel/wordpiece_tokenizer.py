@@ -12,6 +12,8 @@ import os
 from tokenizers import BertWordPieceTokenizer
 from transformers import BertTokenizer
 
+from densePassageRetrivalModel.config import DensePassageRetrivalConfiguration
+
 
 class WordPieceDomainTokenizer:
     def __init__(self, pretraining_folder: str, pretrained=False) -> None:

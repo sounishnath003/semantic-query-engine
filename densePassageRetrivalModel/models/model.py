@@ -24,13 +24,13 @@ class DensePassageRetrivalDeepNeuralNetM(nn.Module):
     def __init__(self, config: DensePassageRetrivalConfiguration) -> None:
         super(DensePassageRetrivalDeepNeuralNetM, self).__init__()
         self.config = config
-        self.passage_retrival_ranker = PassageContextRetrivalEncoder(
-            model_name="bert-base-uncased",
+        self.query_reader_ranker = QueryContextReaderEncoder(
+            model_name=config.model_name,
             num_train_steps=config.num_train_steps,
             learning_rate=config.learning_rate,
         )
-        self.query_reader_ranker = QueryContextReaderEncoder(
-            model_name="bert-base-uncased",
+        self.passage_retrival_ranker = PassageContextRetrivalEncoder(
+            model_name=config.model_name,
             num_train_steps=config.num_train_steps,
             learning_rate=config.learning_rate,
         )

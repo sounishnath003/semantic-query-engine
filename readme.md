@@ -52,6 +52,7 @@ INFO:root:DensePassageRetrivalDeepNeuralNetM(
 
 - [Bert WordPiece Tokenizer](https://towardsdatascience.com/how-to-build-a-wordpiece-tokenizer-for-bert-f505d97dddbb)
 - [Understanding DPR Systems](https://towardsdatascience.com/understanding-dense-passage-retrieval-dpr-system-bce5aee4fd40)
+- [Humanoid Question Answering Model Architecture](https://journalofbigdata.springeropen.com/articles/10.1186/s40537-020-00341-6)
 - [Dense Passage Retrival Research Paper](https://arxiv.org/pdf/2004.04906.pdf)
 - [Haystack Deepset Explanation On DPR Models](https://haystack.deepset.ai/tutorials/09_dpr_training)
 - [Dense Passage Retrival Ranker Towards Data science Paper Explanation](https://towardsdatascience.com/how-to-create-an-answer-from-a-question-with-dpr-d76e29cc5d60)
