@@ -9,6 +9,7 @@ createdAt: 2023-02-12 20:44:04
 
 import logging
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -36,29 +37,25 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
         config = AutoConfig.from_pretrained(configuration.model_name)
         config.update(
             {
-                "output_hidden_states": True,
+                "output_hidden_states": False,
                 "hidden_dropout_prob": hidden_dropout_prob,
                 "layer_norm_eps": layer_norm_eps,
                 "add_pooling_layer": False,
-                "num_labels": 2,
+                "num_labels": 3,
             }
         )
 
         self.transformer = AutoModel.from_pretrained(
             configuration.model_name, config=config
         )
-        self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.context_2_query_attention = nn.ModuleList(
-            [
-                nn.Linear(configuration.hidden_size, configuration.hidden_size),
-                nn.LayerNorm(configuration.hidden_size),
-            ]
+        self.dropout = nn.Dropout(0.20)
+        self.context_2_query_attention = nn.Sequential(
+            nn.Linear(4096, 768),
+            nn.LayerNorm(768, eps=1e-4),
         )
-        self.query_2_context_attention = nn.ModuleList(
-            [
-                nn.Linear(configuration.hidden_size, configuration.hidden_size),
-                nn.LayerNorm(configuration.hidden_size),
-            ]
+        self.query_2_context_attention = nn.Sequential(
+            nn.Linear(144, 768),
+            nn.LayerNorm(768, eps=1e-4),
         )
         self.ansfranger_ffn = nn.Linear(configuration.hidden_size, 2)
 
@@ -102,22 +99,54 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
         4. combined c2q, q2c attention
         5.
         """
-        _query_transformer_out = self.transformer(**query_tokenized)
-        _query_pooled_out = _query_transformer_out.pooler_output
-        logging.debug(f"_query_pooled_out={_query_pooled_out.size()}")
 
-        _context_transformer_out = self.transformer(**context_tokenized)
-        _context_pooled_out = _context_transformer_out.pooler_output
-        logging.debug(f"_context_pooled_out={_context_pooled_out.size()}")
+        # pooler_output: torch.Size([bs, 768])
+        _query_outs = self.transformer(**query_tokenized)["pooler_output"]
+        # pooler_output: torch.Size([bs, 768])
+        _context_outs = self.transformer(**context_tokenized)["pooler_output"]
 
-        _softmaxed_query_distb = torch.softmax(_query_pooled_out, dim=1)
-        _softmaxed_context_distb = torch.softmax(_context_pooled_out, dim=1)
-        scores = torch.bmm(
-            _softmaxed_context_distb, _softmaxed_query_distb.transpose(1, 2)
-        ) / torch.tensor(8, dtype=torch.float)
-        logging.debug(f"scores={scores.size()}")
-        _weights = torch.softmax(scores, dim=-1)
-        logging.debug(f"_weights={_weights.size()}")
+        _query_outs = self.dropout(_query_outs)
+        _context_outs = self.dropout(_context_outs)
+
+        batch_size = _query_outs.size(0)
+        _query_3d = torch.reshape(
+            _query_outs, shape=(batch_size, 12, 64)
+        )  # torch.Size([2, 12, 64])
+
+        _context_3d = torch.reshape(
+            _context_outs, shape=(batch_size, 64, 12)
+        )  # torch.Size([2, 64, 12])
+
+        scores = (
+            torch.softmax(_query_3d, dim=2) @ torch.softmax(_context_3d, dim=2)
+        ).relu() / torch.tensor(
+            8, dtype=torch.float
+        )  # torch.Size([2, 12, 12])
+
+        weights = torch.softmax(scores, dim=-1)  # torch.Size([2, 12, 12])
+
+        _context_attn_inp = torch.bmm(_context_3d @ weights, _query_3d).reshape(
+            batch_size, 64 * 64
+        )
+        _context_attn_out = F.relu(self.context_2_query_attention(_context_attn_inp))
+
+        _query_attn_inp = torch.bmm(_query_3d, _context_3d @ weights).reshape(
+            batch_size, 12 * 12
+        )
+        _query_attn_out = F.relu(self.query_2_context_attention(_query_attn_inp))
+
+        x = torch.stack(
+            (
+                _query_attn_out,
+                _context_attn_out,
+            ),
+            dim=1,
+        )
+        logging.debug(x.size())
+
+        return weights
+
+        """
 
         _context_pooled_out_attn = torch.bmm(
             _query_pooled_out, _query_pooled_out @ _weights
@@ -138,12 +167,16 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
         _qa_attn = _context_pooled_out_attn @ _query_pooled_out_attn
         logging.debug(f"_qa_attn={_qa_attn.size()}")
         _drops_inp = torch.bmm(_context_pooled_out, _qa_attn)
-        logging.debug(f"_drops_inp={_drops_inp.size()}")
+        """
+        # _drops_inp = _query_pooled_out.pick() @ _context_pooled_out
+        # logging.debug(f"_drops_inp={_drops_inp.size()}")
 
-        _dropout_outs = self.dropout(_drops_inp)
+        _dropout_outs = self.dropout(_context_pooled_out)
         logging.debug(f"_dropout_outs={_dropout_outs.size()}")
         logits = self.ansfranger_ffn(_dropout_outs)
         logging.debug(f"logits={logits.size()}")
+        logging.debug(f"logits_reshape={logits.view(2,8,128//8).size()}")
 
-        start_logits, end_logits = logits.split(1, dim=1)
-        return start_logits, end_logits
+        # start_logits, end_logits = logits.split(1, dim=1)
+        # return start_logits, end_logits
+        return torch.split(logits, split_size_or_sections=128, dim=1)

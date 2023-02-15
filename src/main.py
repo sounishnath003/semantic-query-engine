@@ -103,16 +103,47 @@ if __name__ == "__main__":
     """
 
     train_dataset = Dataset(tokenizer=tokenizer, documents=train_data)
-    train_dataloader = DataLoader(dataset=train_dataset, batch_size=2, shuffle=True)
-
     valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data)
-    valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=2, shuffle=True)
-    # logging.info(train_dataset[1])
+
+    train_dataloader = DataLoader(dataset=train_dataset, batch_size=2, shuffle=True)
+    valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=2)
 
     qa_model = OpenDomainQuestionAnsweringModel(configuration=configuration)
-    ddict = next(iter(train_dataloader))
-    outs = qa_model(**ddict)
-    logging.info(ddict)
+    # logging.debug(qa_model)
+    inpp = next(iter(train_dataloader))
+    outs = qa_model.forward(**inpp)
+    logging.debug(outs.size())
+
+    """
+    tez_configuration = tez.TezConfig(
+        device="cpu",
+        training_batch_size=Config.TRAIN_BATCH_SIZE,
+        validation_batch_size=Config.VALID_BATCH_SIZE,
+        epochs=Config.EPOCHS,
+        gradient_accumulation_steps=Config.ACCUMULATION_STEP,
+        clip_grad_norm=1.0,
+        step_scheduler_after="batch",
+    )
+    qa_model = tez.Tez(
+        model=qa_model,
+        config=tez_configuration,
+        num_train_steps=(
+            len(train_dataset)
+            / Config.TRAIN_BATCH_SIZE
+            / (Config.ACCUMULATION_STEP * Config.EPOCHS)
+        ),
+        num_valid_steps=(
+            len(valid_dataset)
+            / Config.TRAIN_BATCH_SIZE
+            / (Config.ACCUMULATION_STEP * Config.EPOCHS)
+        ),
+    )
+    qa_model.fit(
+        train_dataset=train_dataset,
+        valid_dataset=valid_dataset,
+        config=tez_configuration,
+    )
+    """
 
     """
     # dpr_model = DensePassageRetrivalDeepNeuralNetM(config=configuration)

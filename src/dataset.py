@@ -44,12 +44,14 @@ class Dataset:
         }
 
     def get_context_tokenized(self, ocontext, oquery):
-        context = self.tokenizer(
+        context = self.tokenizer.encode_plus(
             oquery,
             ocontext,
             truncation="only_second",
-            max_length=Config.MAX_SEQUENCE_LENGTH,
             padding="max_length",
+            pad_to_max_length=True,
+            add_special_tokens=True,
+            max_length=Config.MAX_SEQUENCE_LENGTH,
             stride=Config.STRIDE_LENGTH,
         )
         context_tokenized = {
@@ -61,10 +63,13 @@ class Dataset:
         return context_tokenized
 
     def get_query_tokenized(self, oquery):
-        query = self.tokenizer(
+        query = self.tokenizer.encode_plus(
             oquery,
-            max_length=64,
+            None,
             padding="max_length",
+            pad_to_max_length=True,
+            add_special_tokens=True,
+            max_length=64,
         )
         query_tokenized = {
             "input_ids": torch.tensor(query["input_ids"], dtype=torch.long),

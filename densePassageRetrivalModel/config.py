@@ -20,5 +20,5 @@ class DensePassageRetrivalConfiguration:
     learning_rate: float = 1e-5
     num_train_steps: int = 100
     model_name: str = "bert-base-uncased"
-    hidden_size: int = 768
+    hidden_size: int = 64
     num_train_steps: int = 100
