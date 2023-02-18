@@ -49,15 +49,8 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
             configuration.model_name, config=config
         )
         self.dropout = nn.Dropout(0.20)
-        self.context_2_query_attention = nn.Sequential(
-            nn.Linear(4096, 768),
-            nn.LayerNorm(768, eps=1e-4),
-        )
-        self.query_2_context_attention = nn.Sequential(
-            nn.Linear(144, 768),
-            nn.LayerNorm(768, eps=1e-4),
-        )
-        self.ansfranger_ffn = nn.Linear(configuration.hidden_size, 2)
+        self.ansfranger_ffn1 = nn.Linear(1536, 512)
+        self.ansfranger_ffn2 = nn.Linear(1536, 512)
 
     def optimizer_scheduler(self):
         param_optimizer = list(self.named_parameters())
@@ -102,81 +95,18 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
 
         # pooler_output: torch.Size([bs, 768])
         _query_outs = self.transformer(**query_tokenized)["pooler_output"]
+        _query_outs = self.dropout(_query_outs)
+
         # pooler_output: torch.Size([bs, 768])
         _context_outs = self.transformer(**context_tokenized)["pooler_output"]
-
-        _query_outs = self.dropout(_query_outs)
         _context_outs = self.dropout(_context_outs)
 
-        batch_size = _query_outs.size(0)
-        _query_3d = torch.reshape(
-            _query_outs, shape=(batch_size, 12, 64)
-        )  # torch.Size([2, 12, 64])
+        _outs = torch.concat([_query_outs, _context_outs], dim=1)
 
-        _context_3d = torch.reshape(
-            _context_outs, shape=(batch_size, 64, 12)
-        )  # torch.Size([2, 64, 12])
+        start_logits = self.ansfranger_ffn1(_outs)
+        end_logits = self.ansfranger_ffn2(_outs)
+        # start_logits, end_logits = torch.split(logits, split_size_or_sections=1, dim=-1)
+        start_logits = start_logits.squeeze(-1)
+        end_logits = end_logits.squeeze(-1)
 
-        scores = (
-            torch.softmax(_query_3d, dim=2) @ torch.softmax(_context_3d, dim=2)
-        ).relu() / torch.tensor(
-            8, dtype=torch.float
-        )  # torch.Size([2, 12, 12])
-
-        weights = torch.softmax(scores, dim=-1)  # torch.Size([2, 12, 12])
-
-        _context_attn_inp = torch.bmm(_context_3d @ weights, _query_3d).reshape(
-            batch_size, 64 * 64
-        )
-        _context_attn_out = F.relu(self.context_2_query_attention(_context_attn_inp))
-
-        _query_attn_inp = torch.bmm(_query_3d, _context_3d @ weights).reshape(
-            batch_size, 12 * 12
-        )
-        _query_attn_out = F.relu(self.query_2_context_attention(_query_attn_inp))
-
-        x = torch.stack(
-            (
-                _query_attn_out,
-                _context_attn_out,
-            ),
-            dim=1,
-        )
-        logging.debug(x.size())
-
-        return weights
-
-        """
-
-        _context_pooled_out_attn = torch.bmm(
-            _query_pooled_out, _query_pooled_out @ _weights
-        )
-        logging.debug(f"_context_pooled_out_attn={_context_pooled_out_attn.size()}")
-        _context_pooled_out_attn = self.context_2_query_attention(
-            _context_pooled_out_attn
-        )
-        logging.debug(f"_context_pooled_out_attn={_context_pooled_out_attn.size()}")
-
-        _query_pooled_out_attn = torch.bmm(
-            _query_pooled_out, _context_pooled_out @ _weights
-        )
-        logging.debug(f"_query_pooled_out_attn={_query_pooled_out_attn.size()}")
-        _query_pooled_out_attn = self.query_2_context_attention(_query_pooled_out_attn)
-        logging.debug(f"_query_pooled_out_attn={_query_pooled_out_attn.size()}")
-
-        _qa_attn = _context_pooled_out_attn @ _query_pooled_out_attn
-        logging.debug(f"_qa_attn={_qa_attn.size()}")
-        _drops_inp = torch.bmm(_context_pooled_out, _qa_attn)
-        """
-        # _drops_inp = _query_pooled_out.pick() @ _context_pooled_out
-        # logging.debug(f"_drops_inp={_drops_inp.size()}")
-
-        _dropout_outs = self.dropout(_context_pooled_out)
-        logging.debug(f"_dropout_outs={_dropout_outs.size()}")
-        logits = self.ansfranger_ffn(_dropout_outs)
-        logging.debug(f"logits={logits.size()}")
-        logging.debug(f"logits_reshape={logits.view(2,8,128//8).size()}")
-
-        # start_logits, end_logits = logits.split(1, dim=1)
-        # return start_logits, end_logits
-        return torch.split(logits, split_size_or_sections=128, dim=1)
+        return start_logits, end_logits

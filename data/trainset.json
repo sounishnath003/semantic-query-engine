@@ -7,11 +7,11 @@
   {
     "query": "Who is the author of Dune?",
     "context": "Dune is a 1965 science fiction novel by American author Frank Herbert, originally published as two separate serials in Analog magazine.",
-    "answer": { "answer": "Some answer", "startIndex": 121, "endIndex": 231 }
+    "answer": { "answer": "Some answer", "startIndex": 20, "endIndex": 23 }
   },
   {
     "query": "To whom did the Virgin Mary allegedly appear in 1858 in Lourdes France?",
     "context": "Architecturally, the school has a Catholic character. Atop the Main Building's gold dome is a golden statue of the Virgin Mary. Immediately in front of the Main Building and facing it, is a copper statue of Christ with arms upraised with the legend 'Venite Ad Me Omnes'. Next to the Main Building is the Basilica of the Sacred Heart. Immediately behind the basilica is the Grotto, a Marian place of prayer and reflection. It is a replica of the grotto at Lourdes, France where the Virgin Mary reputedly appeared to Saint Bernadette Soubirous in 1858. At the end of the main drive (and in a direct line that connects through 3 statues and the Gold Dome), is a simple, modern stone statue of Mary.",
-    "answer": { "answer": "Some answer", "startIndex": 112, "endIndex": 223 }
+    "answer": { "answer": "Some answer", "startIndex": 13, "endIndex": 33 }
   }
 ]

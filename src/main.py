@@ -28,6 +28,7 @@ from densePassageRetrivalModel import (
 )
 from src.config import Config
 from src.dataset import Dataset
+from src.engine import trainloop
 
 ## GLOBAL PRESETS #########
 warnings.filterwarnings("ignore")
@@ -109,10 +110,10 @@ if __name__ == "__main__":
     valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=2)
 
     qa_model = OpenDomainQuestionAnsweringModel(configuration=configuration)
-    # logging.debug(qa_model)
-    inpp = next(iter(train_dataloader))
-    outs = qa_model.forward(**inpp)
-    logging.debug(outs.size())
+    # # logging.debug(qa_model)
+    # inpp = next(iter(train_dataloader))
+    # outs = qa_model.forward(**inpp)
+    trainloop(model=qa_model, dataloader=train_dataloader, config=Config)
 
     """
     tez_configuration = tez.TezConfig(

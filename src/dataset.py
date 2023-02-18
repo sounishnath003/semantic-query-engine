@@ -36,11 +36,17 @@ class Dataset:
         context_tokenized = self.get_context_tokenized(ocontext, oquery)
         answer = self.document[item].answer
 
+        # create the start and end position labels
+        start_label = torch.zeros(Config.MAX_SEQUENCE_LENGTH, dtype=torch.float)
+        end_label = torch.zeros(Config.MAX_SEQUENCE_LENGTH, dtype=torch.float)
+        start_label[answer.startIndex] = 1.0
+        end_label[answer.endIndex] = 1.0
+
         return {
             "query_tokenized": query_tokenized,
             "context_tokenized": context_tokenized,
-            "answer_start_index": torch.tensor(answer.startIndex, dtype=torch.long),
-            "answer_end_index": torch.tensor(answer.endIndex, dtype=torch.long),
+            "answer_start_index": torch.tensor(start_label, dtype=torch.float),
+            "answer_end_index": torch.tensor(end_label, dtype=torch.float),
         }
 
     def get_context_tokenized(self, ocontext, oquery):
