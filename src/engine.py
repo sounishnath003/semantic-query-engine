@@ -15,10 +15,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
+from densePassageRetrivalModel.wordpiece_tokenizer import BertTokenizer
 from src.config import Config
 
 
-def trainloop(model: nn.Module, dataloader, config: Config):
+def trainloop(model: nn.Module, tokenizer: BertTokenizer, dataloader, config: Config):
     lossfn = nn.CrossEntropyLoss()
     opt = torch.optim.AdamW(model.parameters(), lr=5e-5)
     model.train()
@@ -44,12 +45,14 @@ def trainloop(model: nn.Module, dataloader, config: Config):
             )
         )
 
-        # if epoch % 4 == 0:
-        #     logging.info(
-        #         {
-        #             "originalStart": torch.argmax(ddata["answer_start_index"], dim=1),
-        #             "originalEnd": torch.argmax(ddata["answer_end_index"], dim=1),
-        #             "predictedStart": torch.argmax(start, dim=1),
-        #             "predictedEnd": torch.argmax(end, dim=1),
-        #         }
-        #     )
+        if epoch % 4 == 0:
+            pstart = torch.argmax(start, dim=1)
+            pend = torch.argmax(end, dim=1)
+            logging.info(
+                {
+                    "originalStart": torch.argmax(ddata["answer_start_index"], dim=1),
+                    "originalEnd": torch.argmax(ddata["answer_end_index"], dim=1),
+                    "predictedStart": pstart,
+                    "predictedEnd": pend,
+                }
+            )

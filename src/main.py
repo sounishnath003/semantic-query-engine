@@ -29,6 +29,7 @@ from densePassageRetrivalModel import (
 from src.config import Config
 from src.dataset import Dataset
 from src.engine import trainloop
+from src.preformats_utils import PreformatDatasetProcessor
 
 ## GLOBAL PRESETS #########
 warnings.filterwarnings("ignore")
@@ -41,12 +42,6 @@ def setups_reproducibility():
     seed = torch.Generator().seed()
     torch.manual_seed(seed)
     logging.info(f"Seeding has been set for numpy and pytorch - {seed}")
-
-
-def load_dataset(training_path: str, validation_path: str):
-    training_data_json = json.load(open(training_path))
-    validation_data_json = json.load(open(validation_path))
-    return training_data_json, validation_data_json
 
 
 def initialize_tokenizer_loaders():
@@ -69,12 +64,16 @@ if __name__ == "__main__":
 
     logging.info(f"Configuration={Config()}")
     logging.info(f"CORPUS_FILES={Config.CORPUS_FILES}")
-    traindata_json, validdata_json = load_dataset(
-        training_path=Config.TRAINING_SET_PATH,
-        validation_path=Config.VALIDATION_SET_PATH,
+
+    raw_train_data = PreformatDatasetProcessor.LoadDataset(
+        filepath=Config.TRAINING_SET_PATH
     )
-    train_data = [DensePassageRetrivalDocument(**dtata) for dtata in traindata_json]
-    valid_data = [DensePassageRetrivalDocument(**dtata) for dtata in validdata_json]
+    raw_valid_data = PreformatDatasetProcessor.LoadDataset(
+        filepath=Config.VALIDATION_SET_PATH
+    )
+
+    train_data = [DensePassageRetrivalDocument(dtata) for dtata in raw_train_data]
+    valid_data = [DensePassageRetrivalDocument(dtata) for dtata in raw_valid_data]
     logging.info(dict(train_size=len(train_data), valid_size=len(valid_data)))
 
     configuration = DensePassageRetrivalConfiguration()
@@ -82,38 +81,42 @@ if __name__ == "__main__":
 
     tokenizer = initialize_tokenizer_loaders()
 
-    """
-    original_sent = "Ratan tata is the big shot"
-    original_sent2 = "Ratan tata owns Tashinq"
-    outs = tokenizer(
-        original_sent,
-        original_sent2,
-        truncation="only_second",
-        max_length=Config.MAX_SEQUENCE_LENGTH,
-        padding="max_length",
-        stride=Config.STRIDE_LENGTH,
-    )
-    retus = tokenizer.decode(outs["input_ids"])
-    logging.info(
-        dict(
-            original=f"{original_sent} {original_sent2}",
-            encode=outs,
-            back_2_original=retus,
-        )
-    )
-    """
+    # original_sent = "Ratan tata is the big shot"
+    # original_sent2 = "Ratan tata owns Tashinq"
+    # outs = tokenizer(
+    #     original_sent,
+    #     original_sent2,
+    #     truncation="only_second",
+    #     max_length=Config.MAX_SEQUENCE_LENGTH,
+    #     padding="max_length",
+    #     stride=Config.STRIDE_LENGTH,
+    # )
+    # retus = tokenizer.decode(outs["input_ids"])
+    # logging.info(
+    #     dict(
+    #         original=f"{original_sent} {original_sent2}",
+    #         encode=outs,
+    #         back_2_original=retus,
+    #     )
+    # )
 
     train_dataset = Dataset(tokenizer=tokenizer, documents=train_data)
     valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data)
 
-    train_dataloader = DataLoader(dataset=train_dataset, batch_size=2, shuffle=True)
-    valid_dataloader = DataLoader(dataset=valid_dataset, batch_size=2)
+    train_dataloader = DataLoader(
+        dataset=train_dataset, batch_size=Config.TRAIN_BATCH_SIZE, shuffle=True
+    )
+    valid_dataloader = DataLoader(
+        dataset=valid_dataset, batch_size=Config.VALID_BATCH_SIZE
+    )
 
     qa_model = OpenDomainQuestionAnsweringModel(configuration=configuration)
     # # logging.debug(qa_model)
     # inpp = next(iter(train_dataloader))
     # outs = qa_model.forward(**inpp)
-    trainloop(model=qa_model, dataloader=train_dataloader, config=Config)
+    trainloop(
+        model=qa_model, tokenizer=tokenizer, dataloader=train_dataloader, config=Config
+    )
 
     """
     tez_configuration = tez.TezConfig(

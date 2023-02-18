@@ -11,21 +11,19 @@ import json
 import typing
 from dataclasses import dataclass
 
+from densePassageRetrivalModel.types import Answer, QuestionAnswerDocument
 from densePassageRetrivalModel.wordpiece_tokenizer import BertTokenizer
 
 
-@dataclass
-class AnswerType:
-    answer: str
-    startIndex: int
-    endIndex: int
-
-
 class DensePassageRetrivalDocument:
-    def __init__(self, query: str, context: str, answer: typing.Any) -> None:
-        self.query = query
-        self.context = context
-        self.answer = AnswerType(**answer)
+    def __init__(self, _document) -> None:
+        try:
+            document = next(_document)
+            self.query = document.query
+            self.context = document.context
+            self.answer = document.answer
+        except Exception as e:
+            print(e)
 
     def to_dictionary(self):
         return {
