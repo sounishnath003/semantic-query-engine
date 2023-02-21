@@ -12,7 +12,6 @@ import typing
 from dataclasses import dataclass
 
 from densePassageRetrivalModel.types import Answer, QuestionAnswerDocument
-from densePassageRetrivalModel.wordpiece_tokenizer import BertTokenizer
 
 
 class DensePassageRetrivalDocument:

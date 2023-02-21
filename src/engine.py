@@ -15,11 +15,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from tqdm import tqdm
 
-from densePassageRetrivalModel.wordpiece_tokenizer import BertTokenizer
+from densePassageRetrivalModel.wordpiece_tokenizer import AutoTokenizer
 from src.config import Config
 
 
-def trainloop(model: nn.Module, tokenizer: BertTokenizer, dataloader, config: Config):
+def trainloop(model: nn.Module, tokenizer: AutoTokenizer, dataloader, config: Config):
     lossfn = nn.CrossEntropyLoss()
     opt = torch.optim.AdamW(model.parameters(), lr=5e-5)
     model.train()
@@ -29,9 +29,11 @@ def trainloop(model: nn.Module, tokenizer: BertTokenizer, dataloader, config: Co
         eouts = None
         for bid, ddata in tqdm(enumerate(dataloader), total=len(dataloader)):
             opt.zero_grad()
-            start, end = model(**ddata)
-            startloss = lossfn(start, ddata["answer_start_index"])
-            endloss = lossfn(end, ddata["answer_end_index"])
+            model(**ddata)
+            start = ddata["start_positions"]
+            end = ddata["end_positions"]
+            startloss = lossfn(start, ddata["start_positions"])
+            endloss = lossfn(end, ddata["end_positions"])
             tloss = startloss + endloss
 
             tloss.backward()
@@ -50,8 +52,8 @@ def trainloop(model: nn.Module, tokenizer: BertTokenizer, dataloader, config: Co
             pend = torch.argmax(end, dim=1)
             logging.info(
                 {
-                    "originalStart": torch.argmax(ddata["answer_start_index"], dim=1),
-                    "originalEnd": torch.argmax(ddata["answer_end_index"], dim=1),
+                    "originalStart": torch.argmax(ddata["start_positions"], dim=1),
+                    "originalEnd": torch.argmax(ddata["end_positions"], dim=1),
                     "predictedStart": pstart,
                     "predictedEnd": pend,
                 }

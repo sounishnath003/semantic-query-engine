@@ -56,3 +56,4 @@ INFO:root:DensePassageRetrivalDeepNeuralNetM(
 - [Dense Passage Retrival Research Paper](https://arxiv.org/pdf/2004.04906.pdf)
 - [Haystack Deepset Explanation On DPR Models](https://haystack.deepset.ai/tutorials/09_dpr_training)
 - [Dense Passage Retrival Ranker Towards Data science Paper Explanation](https://towardsdatascience.com/how-to-create-an-answer-from-a-question-with-dpr-d76e29cc5d60)
+- [Neptune Bert From Scratch](https://neptune.ai/blog/how-to-code-bert-using-pytorch-tutorial)

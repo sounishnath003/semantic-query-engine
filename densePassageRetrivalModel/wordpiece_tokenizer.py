@@ -10,7 +10,7 @@ createdAt: 2023-02-11 13:08:46
 import os
 
 from tokenizers import BertWordPieceTokenizer
-from transformers import BertTokenizer
+from transformers import AutoTokenizer
 
 from densePassageRetrivalModel.config import DensePassageRetrivalConfiguration
 
@@ -74,4 +74,4 @@ class WordPieceDomainTokenizer:
             return None
 
     def __load_pretrained_tokenizer(self):
-        return BertTokenizer.from_pretrained(self.pretrained_folder)
+        return AutoTokenizer.from_pretrained(self.pretrained_folder)

@@ -18,10 +18,14 @@ from transformers.optimization import AdamW, get_linear_schedule_with_warmup
 
 from densePassageRetrivalModel.config import DensePassageRetrivalConfiguration
 
+from src.config import Config
+
 
 class OpenDomainQuestionAnsweringModel(nn.Module):
     def __init__(
         self,
+        model_name: str,
+        pretrained_model: AutoModel,
         configuration: DensePassageRetrivalConfiguration,
     ) -> None:
         super(OpenDomainQuestionAnsweringModel, self).__init__()
@@ -45,12 +49,14 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
             }
         )
 
-        self.transformer = AutoModel.from_pretrained(
-            configuration.model_name, config=config
-        )
+        self.transformer = pretrained_model
         self.dropout = nn.Dropout(0.20)
-        self.ansfranger_ffn1 = nn.Linear(1536, 512)
-        self.ansfranger_ffn2 = nn.Linear(1536, 512)
+        self.start_span_clf = nn.Linear(
+            Config.MAX_SEQUENCE_LENGTH, Config.MAX_SEQUENCE_LENGTH
+        )
+        self.end_span_clf = nn.Linear(
+            Config.MAX_SEQUENCE_LENGTH, Config.MAX_SEQUENCE_LENGTH
+        )
 
     def optimizer_scheduler(self):
         param_optimizer = list(self.named_parameters())
@@ -80,10 +86,11 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
 
     def forward(
         self,
-        query_tokenized,
-        context_tokenized,
-        answer_start_index=None,
-        answer_end_index=None,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        token_type_ids: torch.Tensor,
+        start_positions=None,
+        end_positions=None,
     ):
         """
         1. query and context tokens passed in params encode them using bert encoder
@@ -92,21 +99,20 @@ class OpenDomainQuestionAnsweringModel(nn.Module):
         4. combined c2q, q2c attention
         5.
         """
+        __outs = self.transformer(
+            **dict(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                start_positions=start_positions,
+                end_positions=end_positions,
+                return_dict=True,
+            )
+        )
 
-        # pooler_output: torch.Size([bs, 768])
-        _query_outs = self.transformer(**query_tokenized)["pooler_output"]
-        _query_outs = self.dropout(_query_outs)
+        start_logits, end_logits = self.dropout(__outs.start_logits), self.dropout(
+            __outs.end_logits
+        )
+        start_logits = self.start_span_clf(start_logits)
+        end_logits = self.end_span_clf(end_logits)
 
-        # pooler_output: torch.Size([bs, 768])
-        _context_outs = self.transformer(**context_tokenized)["pooler_output"]
-        _context_outs = self.dropout(_context_outs)
-
-        _outs = torch.concat([_query_outs, _context_outs], dim=1)
-
-        start_logits = self.ansfranger_ffn1(_outs)
-        end_logits = self.ansfranger_ffn2(_outs)
-        # start_logits, end_logits = torch.split(logits, split_size_or_sections=1, dim=-1)
-        start_logits = start_logits.squeeze(-1)
-        end_logits = end_logits.squeeze(-1)
-
-        return start_logits, end_logits
+        return start_logits, end_logits, __outs.loss

@@ -46,6 +46,7 @@ def setups_reproducibility():
 
 def initialize_tokenizer_loaders():
     logging.basicConfig(level=logging.DEBUG)
+    """
     try:
         tokenizer = WordPieceDomainTokenizer(
             pretraining_folder=Config.PRETRAINING_TOKEN_FOLDER,
@@ -56,6 +57,8 @@ def initialize_tokenizer_loaders():
     except Exception as e:
         logging.error(e)
         return None
+    """
+    return Config.TOKENIZER
 
 
 if __name__ == "__main__":
@@ -81,27 +84,8 @@ if __name__ == "__main__":
 
     tokenizer = initialize_tokenizer_loaders()
 
-    # original_sent = "Ratan tata is the big shot"
-    # original_sent2 = "Ratan tata owns Tashinq"
-    # outs = tokenizer(
-    #     original_sent,
-    #     original_sent2,
-    #     truncation="only_second",
-    #     max_length=Config.MAX_SEQUENCE_LENGTH,
-    #     padding="max_length",
-    #     stride=Config.STRIDE_LENGTH,
-    # )
-    # retus = tokenizer.decode(outs["input_ids"])
-    # logging.info(
-    #     dict(
-    #         original=f"{original_sent} {original_sent2}",
-    #         encode=outs,
-    #         back_2_original=retus,
-    #     )
-    # )
-
-    train_dataset = Dataset(tokenizer=tokenizer, documents=train_data)
-    valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data)
+    train_dataset = Dataset(tokenizer=tokenizer, documents=train_data, is_eval=True)
+    valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data, is_eval=True)
 
     train_dataloader = DataLoader(
         dataset=train_dataset, batch_size=Config.TRAIN_BATCH_SIZE, shuffle=True
@@ -110,13 +94,14 @@ if __name__ == "__main__":
         dataset=valid_dataset, batch_size=Config.VALID_BATCH_SIZE
     )
 
-    qa_model = OpenDomainQuestionAnsweringModel(configuration=configuration)
-    # # logging.debug(qa_model)
-    # inpp = next(iter(train_dataloader))
-    # outs = qa_model.forward(**inpp)
-    trainloop(
-        model=qa_model, tokenizer=tokenizer, dataloader=train_dataloader, config=Config
+    qa_model = OpenDomainQuestionAnsweringModel(
+        model_name=Config.MODEL_NAME,
+        pretrained_model=Config.BERT_MODEL,
+        configuration=configuration,
     )
+    # logging.debug(qa_model)
+
+    op = qa_model.forward(**train_dataset[2])
 
     """
     tez_configuration = tez.TezConfig(

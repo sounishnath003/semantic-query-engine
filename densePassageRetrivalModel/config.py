@@ -19,6 +19,6 @@ class DensePassageRetrivalConfiguration:
     num_valid_batch_size: int = 16
     learning_rate: float = 1e-5
     num_train_steps: int = 100
-    model_name: str = "bert-base-uncased"
+    model_name: str = "distilbert-base-uncased"
     hidden_size: int = 64
     num_train_steps: int = 100
