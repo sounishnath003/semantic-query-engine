@@ -10,7 +10,7 @@ createdAt: 2023-02-11 11:55:41
 from dataclasses import dataclass
 from glob import glob
 
-from transformers import AutoModel, AutoTokenizer, DistilBertForQuestionAnswering
+from transformers import AutoModel, AutoTokenizer, AutoModelForQuestionAnswering
 
 
 @dataclass
@@ -24,7 +24,7 @@ class Config:
     TRAIN_BATCH_SIZE = 8
     VALID_BATCH_SIZE = 8
     ACCUMULATION_STEP = 1
-    EPOCHS = 20
+    EPOCHS = 2
 
     CORPUS_FILES = glob("./corpus/*.txt")
     # PRETRAINING_TOKEN_FOLDER: str = "./pretrained/pretraining_tokenizer_out"
@@ -33,7 +33,7 @@ class Config:
     TOKENIZER: AutoTokenizer = AutoTokenizer.from_pretrained(
         f"./pretrained/{MODEL_NAME}"
     )
-    BERT_MODEL: AutoModel = DistilBertForQuestionAnswering.from_pretrained(
+    BERT_MODEL: AutoModel = AutoModelForQuestionAnswering.from_pretrained(
         f"./pretrained/{MODEL_NAME}"
     )
 

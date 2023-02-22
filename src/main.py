@@ -84,26 +84,15 @@ if __name__ == "__main__":
 
     tokenizer = initialize_tokenizer_loaders()
 
-    train_dataset = Dataset(tokenizer=tokenizer, documents=train_data, is_eval=True)
+    train_dataset = Dataset(tokenizer=tokenizer, documents=train_data, is_eval=False)
     valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data, is_eval=True)
-
-    train_dataloader = DataLoader(
-        dataset=train_dataset, batch_size=Config.TRAIN_BATCH_SIZE, shuffle=True
-    )
-    valid_dataloader = DataLoader(
-        dataset=valid_dataset, batch_size=Config.VALID_BATCH_SIZE
-    )
 
     qa_model = OpenDomainQuestionAnsweringModel(
         model_name=Config.MODEL_NAME,
         pretrained_model=Config.BERT_MODEL,
         configuration=configuration,
     )
-    # logging.debug(qa_model)
 
-    op = qa_model.forward(**train_dataset[2])
-
-    """
     tez_configuration = tez.TezConfig(
         device="cpu",
         training_batch_size=Config.TRAIN_BATCH_SIZE,
@@ -130,9 +119,8 @@ if __name__ == "__main__":
     qa_model.fit(
         train_dataset=train_dataset,
         valid_dataset=valid_dataset,
-        config=tez_configuration,
     )
-    """
+    qa_model.save("model.bin")
 
     """
     # dpr_model = DensePassageRetrivalDeepNeuralNetM(config=configuration)

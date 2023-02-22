@@ -39,7 +39,7 @@ class Dataset:
         )
         answer: Answer = self.document[item].answer
 
-        if self.is_eval:
+        if self.is_eval == False:
             start_label, end_label = self.__build_answer_start_end_ranges(
                 inputs=encoded_inputs, answer=answer
             )
@@ -47,6 +47,27 @@ class Dataset:
                 start_label, dtype=torch.long
             )
             encoded_inputs["end_positions"] = torch.tensor(end_label, dtype=torch.long)
+
+            encoded_inputs = {
+                "input_ids": torch.tensor(
+                    encoded_inputs["input_ids"], dtype=torch.long
+                ).squeeze(0),
+                "attention_mask": torch.tensor(
+                    encoded_inputs["attention_mask"], dtype=torch.long
+                ).squeeze(0),
+                "token_type_ids": torch.tensor(
+                    encoded_inputs["token_type_ids"], dtype=torch.long
+                ).squeeze(0),
+                "start_positions": torch.tensor(
+                    encoded_inputs["start_positions"], dtype=torch.long
+                ),
+                "end_positions": torch.tensor(
+                    encoded_inputs["end_positions"], dtype=torch.long
+                ),
+            }
+            return encoded_inputs
+        else:
+            encoded_inputs.pop("offset_mapping")
 
         return encoded_inputs
 
@@ -90,7 +111,7 @@ class Dataset:
                     idx -= 1
                 end_positions = idx + 1
 
-        return [start_positions], [end_positions]
+        return start_positions, end_positions
 
     def get_query_context_tokenized(self, ocontext, oquery):
         context = self.tokenizer.encode_plus(
