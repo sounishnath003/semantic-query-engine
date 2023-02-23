@@ -85,7 +85,7 @@ if __name__ == "__main__":
     tokenizer = initialize_tokenizer_loaders()
 
     train_dataset = Dataset(tokenizer=tokenizer, documents=train_data, is_eval=False)
-    valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data, is_eval=True)
+    valid_dataset = Dataset(tokenizer=tokenizer, documents=valid_data, is_eval=False)
 
     qa_model = OpenDomainQuestionAnsweringModel(
         model_name=Config.MODEL_NAME,

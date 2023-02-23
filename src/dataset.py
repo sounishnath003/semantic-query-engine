@@ -74,8 +74,8 @@ class Dataset:
     def __build_answer_start_end_ranges(self, inputs, answer: Answer):
         offset_mapping = inputs.pop("offset_mapping")
         sample_map = inputs.pop("overflow_to_sample_mapping")
-        start_positions = 0
-        end_positions = 0
+        start_positions = []
+        end_positions = []
 
         for i, offset in enumerate(offset_mapping):
             sample_idx = sample_map[i]
@@ -97,21 +97,21 @@ class Dataset:
                 offset[context_start][0] > start_char
                 or offset[context_end][1] < end_char
             ):
-                start_positions = 0
-                end_positions = 0
+                start_positions.append(0)
+                end_positions.append(0)
             else:
                 # Otherwise it's the start and end token positions
                 idx = context_start
                 while idx <= context_end and offset[idx][0] <= start_char:
                     idx += 1
-                start_positions = idx - 1
+                start_positions.append(idx - 1)
 
                 idx = context_end
                 while idx >= context_start and offset[idx][1] >= end_char:
                     idx -= 1
-                end_positions = idx + 1
+                end_positions.append(idx + 1)
 
-        return start_positions, end_positions
+        return start_positions[0], end_positions[0]
 
     def get_query_context_tokenized(self, ocontext, oquery):
         context = self.tokenizer.encode_plus(

@@ -17,10 +17,10 @@ from densePassageRetrivalModel.types import Answer, QuestionAnswerDocument
 class DensePassageRetrivalDocument:
     def __init__(self, _document) -> None:
         try:
-            document = next(_document)
-            self.query = document.query
-            self.context = document.context
-            self.answer = document.answer
+            # document = next(_document)
+            self.query = _document.query
+            self.context = _document.context
+            self.answer = _document.answer
         except Exception as e:
             print(e)
 

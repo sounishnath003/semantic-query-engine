@@ -29,7 +29,7 @@ class PreformatDatasetProcessor:
             for record_data in PreformatDatasetProcessor.LoadJSON(
                 dataset_filepath=dataset_path
             ):
-                __datas.append(PreformatDatasetProcessor.ProcessData(record_data))
+                __datas.extend(PreformatDatasetProcessor.ProcessData(record_data))
             return (d for d in __datas)
 
         return __load_dataset(dataset_path=filepath)
@@ -51,12 +51,11 @@ class PreformatDatasetProcessor:
             for _rqas in rparag.qas:
                 rqas = QA(**_rqas)
                 for _rans in rqas.answers:
-                    results.append(
-                        QuestionAnswerDocument(
-                            context=rparag.context,
-                            query=rqas.question,
-                            answer=Answer(**_rans),
-                        )
+                    ques_ddata = QuestionAnswerDocument(
+                        context=rparag.context,
+                        query=rqas.question,
+                        answer=Answer(**_rans),
                     )
+                    results.append(ques_ddata)
 
-        return (r for r in results)
+        return (d for d in results)
